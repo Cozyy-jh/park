@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/; font-src https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-B+rF4Y+sRAOzxjRmq6wipxKWrjLVDlhuMN9nhJ5JDk0='; style-src 'sha256-ypfjdhlmiOf7hr9dHO9/vIz6ItDV1L1W7WnqUn+emC8=' https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/; font-src https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#F2F4F6">
@@ -17,7 +17,303 @@
 <meta property="og:image" content="assets/card-front.png">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="css/app.css">
+<style>
+/* 트러스트 파이프라인 MVP — 고객용·영업자용 공용 스타일. 값은 피그마 색 변수와 화면설계서 치수를 따른다. */
+:root {
+  --primary: #2F6FED;
+  --primary-strong: #1F5AD6;
+  --primary-bg: #EAF1FF;
+  --bg: #F2F4F6;
+  --surface: #FFFFFF;
+  --text: #191F28;
+  --text-sub: #4E5968;
+  --text-weak: #5F6B7A;
+  --text-muted: #8B95A1;
+  --line: #E5E8EB;
+  --success: #0B7A4B;
+  --success-bg: #E3F5EC;
+  --warning: #9A5007; /* 피그마 값(#B25E09)보다 조금 어둡게: 연한 바탕 위 글자 대비 4.5:1 확보 */
+  --warning-bg: #FFF1DB;
+  --danger: #D92D20;
+  --danger-strong: #B42318;
+  --danger-bg: #FDECEA;
+  --disabled: #C9D1DB;
+  --off: #B0B8C1;
+  --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: #E9ECEF; color: var(--text);
+  font-family: var(--font); font-size: 15px; line-height: 1.45; word-break: keep-all;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+body.locked { overflow: hidden; }
+h1, h2, h3, p, ul, dl, dd { margin: 0; padding: 0; }
+ul { list-style: none; }
+button, input, textarea { font: inherit; color: inherit; }
+button { padding: 0; border: 0; background: none; cursor: pointer; }
+button:disabled { cursor: default; }
+a { color: inherit; text-decoration: none; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.center { text-align: center; }
+
+.screen { position: relative; max-width: 430px; min-height: 100vh; min-height: 100dvh; margin: 0 auto; background: var(--bg); }
+
+/* ---------- 고객용 R-01, R-02 ---------- */
+.customer-screen { display: flex; flex-direction: column; justify-content: space-between; padding: 24px 16px 16px; }
+
+.card { display: block; width: 100%; aspect-ratio: 328 / 182; border-radius: 12px; perspective: 1200px; }
+.card-inner { position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
+.card[aria-pressed="true"] .card-inner { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.face-back { transform: rotateY(180deg); }
+.face.loading { background: #E9ECEF; }
+.face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.face-text { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px; text-align: left; }
+.face-text-back { align-items: center; justify-content: center; gap: 4px; text-align: center; }
+.ft-co { font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.ft-main { display: block; }
+.ft-name { display: block; font-size: 24px; font-weight: 700; line-height: 30px; }
+.ft-name-sm { font-size: 16px; font-weight: 700; line-height: 24px; }
+.ft-sub { display: block; font-size: 13px; line-height: 18px; color: var(--text-sub); }
+
+.hint { margin-top: 8px; text-align: center; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+
+.actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.action { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 64px; border-radius: 14px; background: var(--surface); font-size: 13px; font-weight: 500; line-height: 18px; }
+.action:active { background: #E9EDF2; }
+.action > svg { color: var(--primary); }
+
+.badge { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 500; line-height: 14px; }
+.badge[data-state="valid"] { color: var(--success); }
+.badge[data-state="partial"] { color: var(--warning); }
+.badge[data-state="expired"] { color: var(--text-weak); }
+.popup .badge { gap: 3px; padding: 2px 10px; border-radius: 999px; font-size: 12px; line-height: 16px; }
+.popup .badge[data-state="valid"] { background: var(--success-bg); }
+.popup .badge[data-state="partial"] { background: var(--warning-bg); }
+.popup .badge[data-state="expired"] { background: var(--bg); }
+
+.icon-links { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+.icon-link { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--surface); color: var(--text-sub); }
+
+.demo-notice { margin-top: 24px; text-align: center; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.demo-notice small { display: block; margin-top: 2px; font-size: 11px; line-height: 14px; color: var(--text-weak); }
+
+/* ---------- 토스트, 팝업, 시트 ---------- */
+.toast { position: fixed; left: 50%; bottom: 56px; z-index: 60; width: min(312px, calc(100% - 48px)); min-height: 40px; padding: 11px 12px; border-radius: 12px; background: var(--text); color: #fff; font-size: 12px; font-weight: 500; line-height: 18px; text-align: center; opacity: 0; pointer-events: none; transform: translate(-50%, 8px); transition: opacity .2s, transform .2s; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+.dim { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .6); opacity: 0; transition: opacity .2s; }
+.dim.show { opacity: 1; }
+
+.popup { position: fixed; left: 50%; top: 50%; z-index: 50; width: min(398px, calc(100% - 32px)); max-height: min(640px, calc(100vh - 48px)); overflow-y: auto; padding: 20px; border-radius: 16px; background: var(--surface); outline: 0; opacity: 0; transform: translate(-50%, -48%); transition: opacity .2s, transform .2s; }
+.popup.show { opacity: 1; transform: translate(-50%, -50%); }
+.popup-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.popup-head h2 { font-size: 20px; line-height: 28px; }
+.popup-who { margin: 4px 0 8px; font-size: 13px; line-height: 18px; color: var(--text-sub); }
+.verify-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.verify-label { font-size: 15px; font-weight: 500; line-height: 22px; }
+.verify-state { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 13px; line-height: 18px; color: var(--text-sub); text-align: right; }
+.verify-state small { font-size: 12px; line-height: 16px; color: var(--text-weak); }
+.verify-row[data-status="pending"] .verify-main { color: var(--warning); font-weight: 500; }
+.verify-row[data-status="expired"] .verify-label, .verify-row[data-status="expired"] .verify-main { color: var(--text-weak); }
+.popup-note { margin-top: 10px; font-size: 13px; color: var(--warning); }
+.popup-foot { margin: 10px 0 14px; font-size: 12px; line-height: 18px; color: var(--text-sub); }
+
+.sheet { position: fixed; left: 50%; bottom: 0; z-index: 50; display: flex; flex-direction: column; width: min(430px, 100%); height: min(720px, 90vh); padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; background: var(--surface); outline: 0; opacity: 0; transform: translate(-50%, 24px); transition: opacity .2s, transform .25s; }
+.sheet.show { opacity: 1; transform: translate(-50%, 0); }
+.sheet-auto { height: auto; max-height: 90vh; }
+.sheet-detail { height: min(640px, 90vh); }
+.grip { flex: none; width: 36px; height: 4px; margin: 0 auto 8px; border-radius: 2px; background: var(--line); }
+.sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.sheet-head h2 { display: flex; align-items: center; gap: 8px; font-size: 20px; line-height: 28px; }
+.sheet-main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.sheet-body { flex: 1; min-height: 0; margin: 0 -16px; padding: 0 16px 4px; overflow-y: auto; }
+.sheet-foot { flex: none; padding-top: 12px; }
+.icon-btn { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -10px; border-radius: 50%; color: var(--text-sub); }
+.icon-btn:disabled { color: var(--disabled); }
+.back-btn { margin: 0 0 0 -10px; color: var(--text); }
+
+/* ---------- 버튼, 입력 ---------- */
+.btn-primary, .btn-secondary { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; border-radius: 12px; font-size: 16px; line-height: 24px; }
+.btn-primary { background: var(--primary); color: #fff; font-weight: 700; }
+.btn-primary:disabled { background: var(--disabled); }
+.btn-secondary { background: var(--surface); box-shadow: inset 0 0 0 1px var(--primary); color: var(--primary-strong); font-weight: 500; }
+.btn-secondary:disabled { box-shadow: inset 0 0 0 1px var(--disabled); color: var(--off); }
+.btn-small { height: 40px; border-radius: 10px; font-size: 14px; line-height: 20px; }
+.link-btn { min-height: 44px; padding: 0 4px; color: var(--primary-strong); font-size: 13px; font-weight: 500; }
+.link-btn.sub { color: var(--text-sub); text-decoration: underline; }
+.text-link { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font-size: 13px; font-weight: 500; color: var(--text-sub); text-decoration: underline; }
+
+.field { margin-top: 12px; }
+.field label, .form-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--text-sub); }
+.form-label { margin-top: 20px; }
+.input, .textarea { display: block; width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 16px; outline: 0; }
+.input { height: 48px; padding: 0 16px; }
+.textarea { height: 96px; padding: 12px 16px; resize: none; }
+.input::placeholder, .textarea::placeholder { color: var(--text-muted); }
+.input:focus, .textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.input:disabled { background: var(--bg); }
+.has-error .input, .input.is-error { border-color: var(--danger); }
+.error { margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--danger); }
+.inline-notice { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--danger-bg); color: var(--danger-strong); font-size: 13px; line-height: 18px; }
+
+/* ---------- 고객용 R-04, R-05 ---------- */
+.stepper { display: flex; gap: 6px; padding-bottom: 12px; font-size: 13px; line-height: 18px; color: var(--text-weak); }
+.stepper .on { color: var(--primary-strong); font-weight: 700; }
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.month-nav strong { min-width: 104px; text-align: center; font-size: 16px; line-height: 24px; }
+.month-nav .icon-btn { margin: 0; }
+.cal-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-head span { height: 24px; text-align: center; font-size: 12px; line-height: 24px; color: var(--text-weak); }
+.day-wrap { display: grid; place-items: center; height: 40px; }
+.day { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font-size: 15px; line-height: 22px; color: var(--off); }
+button.day { color: var(--text); font-weight: 500; }
+button.day::after { content: ""; position: absolute; inset: -2px -5px; }
+.day[data-state="today"] { box-shadow: inset 0 0 0 1px var(--disabled); }
+.day[data-state="selected"] { background: var(--primary); color: #fff; font-weight: 700; }
+.sub-label { margin: 10px 0 8px; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--text-sub); }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.slot { position: relative; height: 40px; border-radius: 10px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; font-weight: 500; }
+.slot::after { content: ""; position: absolute; inset: -2px 0; }
+.slot[data-state="selected"] { background: var(--primary); box-shadow: none; color: #fff; font-weight: 700; }
+.slot[data-state="closed"] { background: var(--bg); box-shadow: none; color: var(--off); text-decoration: line-through; }
+.empty-box { padding: 24px 16px; border-radius: 12px; background: var(--bg); text-align: center; font-size: 14px; line-height: 20px; color: var(--text-sub); }
+.summary { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-top: 12px; padding: 0 16px; border-radius: 12px; background: var(--primary-bg); font-size: 15px; font-weight: 500; line-height: 22px; }
+.stepper + .summary { margin-top: 0; }
+.summary .link-btn { margin-right: -4px; }
+
+.consent { margin-top: 16px; }
+.consent-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.check { position: relative; display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 500; line-height: 20px; cursor: pointer; }
+.check-input { position: absolute; left: 0; top: 10px; width: 24px; height: 24px; margin: 0; opacity: 0; }
+.check-box { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border: 1.5px solid var(--off); border-radius: 6px; color: transparent; }
+.check-input:checked + .check-box { border-color: var(--primary); background: var(--primary); color: #fff; }
+.check-input:focus-visible + .check-box { outline: 2px solid var(--primary); outline-offset: 2px; }
+.has-error .check-box { border-color: var(--danger); }
+.consent-detail { margin-top: 6px; padding: 12px; border-radius: 12px; background: var(--bg); font-size: 12px; line-height: 18px; color: var(--text-sub); }
+
+.done-mark { display: grid; place-items: center; width: 72px; height: 72px; margin: 32px auto 20px; border-radius: 50%; background: var(--success-bg); color: var(--success); }
+.done-title { text-align: center; font-size: 20px; line-height: 28px; }
+.kv { display: grid; gap: 10px; margin-top: 20px; padding: 16px; border-radius: 12px; background: var(--bg); }
+.kv div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kv dt { flex: none; font-size: 13px; line-height: 18px; color: var(--text-sub); }
+.kv dd { font-size: 14px; font-weight: 500; line-height: 20px; text-align: right; overflow-wrap: anywhere; }
+.done-guide { margin-top: 16px; text-align: center; font-size: 13px; line-height: 20px; color: var(--text-sub); }
+
+/* ---------- 영업자용 S-01 ---------- */
+.login { display: flex; flex-direction: column; justify-content: space-between; min-height: 100vh; min-height: 100dvh; padding: 128px 16px 24px; background: var(--surface); }
+.login-service { text-align: center; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--text-sub); }
+.login h1 { text-align: center; font-size: 24px; line-height: 32px; }
+.card-summary { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 60px; margin-top: 32px; padding: 8px; border-radius: 12px; background: var(--bg); text-align: center; }
+.card-summary strong { font-size: 15px; line-height: 20px; }
+.card-summary span { font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.login-form { margin-top: 24px; }
+.login-form label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--text-sub); }
+.login-form .btn-primary { margin-top: 16px; }
+.pin { font-size: 20px; letter-spacing: .4em; }
+.login-key { margin-bottom: 16px; }
+.field-hint { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+
+/* ---------- 영업자용 공통 틀 ---------- */
+.app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+.band { flex: none; padding: 4px 12px; background: var(--warning-bg); color: var(--warning); font-size: 12px; font-weight: 500; line-height: 16px; text-align: center; }
+.topbar { flex: none; display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 16px; }
+.topbar h1 { font-size: 20px; line-height: 28px; }
+.topbar-count { font-size: 13px; color: var(--text-sub); }
+.share-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px 0 10px; border-radius: 16px; background: var(--primary-bg); color: var(--primary-strong); font-size: 13px; font-weight: 700; }
+.share-btn::after { content: ""; position: absolute; inset: -6px 0; }
+.view { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding: 12px 16px 16px; overflow-y: auto; }
+.view > * { flex: none; }
+.tabbar { flex: none; display: grid; grid-template-columns: repeat(3, 1fr); height: calc(56px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--line); background: var(--surface); }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-sub); font-size: 11px; font-weight: 500; line-height: 14px; }
+.tab[aria-current="page"] { color: var(--primary-strong); font-weight: 700; }
+.tab-label { display: inline-flex; align-items: flex-start; gap: 2px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--danger); }
+
+.chips { display: flex; gap: 8px; margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { position: relative; flex: none; height: 32px; padding: 0 14px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-sub); font-size: 13px; font-weight: 500; }
+.chip::after { content: ""; position: absolute; inset: -6px 0; }
+.chip[data-selected="true"] { background: var(--text); box-shadow: none; color: #fff; font-weight: 700; }
+
+/* ---------- 영업자용 S-02 ---------- */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat { display: flex; flex-direction: column; justify-content: center; gap: 2px; height: 72px; padding: 0 14px; border-radius: 14px; background: var(--surface); }
+.stat dt { font-size: 13px; line-height: 18px; color: var(--text-sub); }
+.stat dd { font-size: 24px; font-weight: 700; line-height: 30px; }
+.rate { margin-top: -4px; font-size: 13px; line-height: 18px; color: var(--text-sub); }
+.block { padding: 16px; border-radius: 16px; background: var(--surface); }
+.block h2 { margin-bottom: 12px; font-size: 16px; line-height: 24px; }
+.bars { display: grid; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: 80px 1fr 40px; align-items: center; height: 24px; font-size: 13px; line-height: 18px; }
+.bar-name { color: var(--text-sub); }
+.bar-track { height: 8px; overflow: hidden; border-radius: 4px; background: var(--bg); }
+.bar-track i { display: block; height: 100%; border-radius: 4px; background: var(--primary); }
+.bar-count { text-align: right; font-weight: 500; }
+.activity { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.activity:last-child { border-bottom: 0; }
+.activity strong { display: block; font-size: 14px; line-height: 20px; }
+.activity p { font-size: 13px; line-height: 18px; color: var(--text-sub); }
+.activity-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.activity-side .link-btn { position: relative; min-height: 28px; font-size: 12px; font-weight: 700; }
+.activity-side .link-btn::after { content: ""; position: absolute; inset: -8px -8px; }
+.more-btn { display: block; width: 100%; height: 44px; font-size: 13px; font-weight: 500; color: var(--text-sub); }
+.empty-state { padding: 32px 16px 24px; border-radius: 16px; background: var(--surface); text-align: center; font-size: 14px; line-height: 20px; color: var(--text-sub); }
+.empty-state .btn-primary { width: 160px; margin: 14px auto 0; }
+.notice-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; border-radius: 10px; background: var(--danger-bg); color: var(--danger-strong); font-size: 13px; }
+.notice-row .link-btn { color: var(--danger-strong); text-decoration: underline; }
+.loading-text { padding: 24px 0; text-align: center; font-size: 14px; color: var(--text-sub); }
+
+/* ---------- 영업자용 S-03 ---------- */
+.customers { display: grid; gap: 8px; }
+.customer { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; width: 100%; min-height: 76px; padding: 12px; border-radius: 14px; background: var(--surface); text-align: left; }
+.customer[data-status="new"] { box-shadow: inset 0 0 0 1.5px var(--primary); }
+.customer-main { display: flex; flex-direction: column; min-width: 0; }
+.customer-main strong { font-size: 15px; line-height: 20px; }
+.customer-slot { overflow: hidden; font-size: 13px; line-height: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.customer-at { font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.status { flex: none; padding: 2px 8px; border-radius: 11px; font-size: 12px; font-weight: 500; line-height: 16px; }
+.status[data-state="new"] { background: var(--primary-bg); color: var(--primary-strong); }
+.status[data-state="contacted"] { background: var(--bg); color: var(--text-sub); }
+.status[data-state="confirmed"] { background: var(--success-bg); color: var(--success); }
+.status[data-state="closed"] { background: var(--bg); color: var(--text-weak); }
+.info div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); }
+.info dt { flex: none; font-size: 13px; color: var(--text-sub); }
+.info dd { font-size: 15px; font-weight: 500; text-align: right; overflow-wrap: anywhere; }
+.contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.segmented { display: grid; grid-template-columns: repeat(4, 1fr); height: 40px; padding: 4px; border-radius: 10px; background: var(--bg); }
+.segmented button { position: relative; border-radius: 8px; color: var(--text-sub); font-size: 13px; font-weight: 500; }
+.segmented button::after { content: ""; position: absolute; inset: -6px 0; }
+.segmented button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, .1); color: var(--text); font-weight: 700; }
+.memo-state { min-height: 16px; margin-top: 4px; text-align: right; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+
+/* ---------- 영업자용 S-06 ---------- */
+.link-preview { display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 8px; border-radius: 12px; background: var(--bg); }
+.mini-card { flex: none; display: flex; flex-direction: column; justify-content: space-between; width: 108px; height: 60px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 7px; line-height: 10px; color: var(--text-weak); }
+.mini-card b { font-size: 11px; line-height: 14px; color: var(--text); }
+.link-preview strong { display: block; font-size: 14px; line-height: 20px; }
+.link-preview p { font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.share-buttons { display: grid; gap: 8px; margin-top: 12px; }
+.counter { display: flex; align-items: center; justify-content: space-between; height: 48px; border-radius: 12px; background: var(--bg); }
+.counter button { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; color: var(--text); }
+.counter button:disabled { color: var(--disabled); }
+.counter output { font-size: 20px; font-weight: 700; line-height: 28px; }
+.counter-caption { margin-top: 8px; text-align: center; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.qr-box { display: grid; place-items: center; width: 264px; height: 264px; margin: 16px auto 0; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-align: center; font-size: 13px; color: var(--text-sub); }
+.qr-box canvas { width: 240px; height: 240px; image-rendering: pixelated; }
+.qr-title { margin-top: 16px; text-align: center; font-size: 16px; font-weight: 700; line-height: 24px; }
+.qr-sub { margin-top: 4px; text-align: center; font-size: 12px; line-height: 16px; color: var(--text-sub); }
+.qr-foot { margin-top: 24px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
 </head>
 <body>
 <main class="screen customer-screen">
@@ -37,11 +333,1631 @@
 
 <noscript><p class="demo-notice">이 명함은 자바스크립트를 켜야 볼 수 있습니다.</p></noscript>
 
-<script src="js/config.js"></script>
-<script src="js/card-data.js"></script>
-<script src="js/core.js"></script>
-<script src="js/store.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/customer.js"></script>
+<script>
+/* js/config.js */
+/* 트러스트 파이프라인 MVP 설정 */
+window.TP_CONFIG = Object.freeze({
+  cardId: 'pjh-001',
+
+  // 구글 Apps Script 웹 앱 주소(https://script.google.com/…/exec).
+  // 비워 두면 이 브라우저 안에만 저장한다(PC 확인용). 주소를 넣으면 스프레드시트에 저장한다.
+  apiUrl: 'https://script.google.com/macros/s/AKfycby-8zSP-k2D2sfr1QBkgkfe60zPwLIntNveJac7XrPrnpDvJTQw7ukftWrmpxFgwOGnLA/exec',
+
+  // 배포한 고객용 명함 주소. 비워 두면 지금 열려 있는 위치의 index.html 을 쓴다.
+  cardUrl: 'https://cozyy-jh.github.io/park/',
+
+  // apiUrl 이 비어 있을 때만 쓰는 PC 확인용 영업자 비밀번호.
+  // 서버를 연결하면 쓰이지 않고, 스프레드시트 메뉴에서 정한 비밀번호를 쓴다.
+  demoPin: ''
+});
+
+/* js/card-data.js */
+/*
+ * 명함 1종의 내용. 운영자가 이 파일을 고쳐 반영한다 (기능명세서 FA-01~03, 수동 운영).
+ *
+ * 전화번호와 인증 항목 4개(재직, 소속, 업무 권한, 전문 자격)의 확인 주체·날짜는
+ * 2026-11-19 에 의뢰처가 확인해 준 값이다. 상황이 바뀌면(퇴사, 소속 이동, 자격 상실 등)
+ * 해당 항목을 expired 로 바꾸고 expiredAt 에 날짜를 적는다 (기능명세서 FA-03).
+ * '기업 확인'은 회사의 확인을 실제로 받은 항목에만 쓴다 (기능명세서 9.2).
+ *
+ * 인증 상태값  done: 확인 완료 / pending: 확인 대기 / expired: 만료 / none: 미제출(화면에서 숨김)
+ * 확인 주체    기업 확인 / 외부 기관 확인 / 증빙 확인 / 본인 입력
+ */
+window.TP_CARD = Object.freeze({
+  id: 'pjh-001',
+  name: '박정훈',
+  company: '삼성화재금융서비스',
+  division: '더프라임 점검본부',
+  title: '',                 // 직책. 비우면 표시하지 않는다
+  phone: '010-8036-8865',    // 전화 저장, 전화·문자 아이콘에 쓴다
+  email: '',                 // 비우면 메일 아이콘을 숨긴다
+  sns: '',                   // https:// 로 시작하는 주소. 비우면 숨긴다
+  homepage: '',
+
+  // 이미지가 없거나 불러오지 못하면 같은 자리에 글자 명함을 보여준다
+  images: { front: 'assets/card-front.png', back: 'assets/card-back.png' },
+
+  // 상담 가능 시간. 서버를 연결하면 스프레드시트 스크립트(Code.gs)의 HOURS 값을 쓴다
+  hours: { days: [1, 2, 3, 4, 5], hours: [10, 11, 13, 14, 15, 16, 17] },
+
+  verify: [
+    { key: 'employment', label: '재직 확인', status: 'done', by: '외부 기관 확인', at: '2026-11-19' },
+    { key: 'division', label: '소속 확인', status: 'done', by: '증빙 확인', at: '2026-11-19' },
+    { key: 'authority', label: '업무 권한', status: 'done', by: '증빙 확인', at: '2026-11-19' },
+    // detail: 줄 아래에 한 줄씩 보여줄 내용(자격 이름, 경력). 2026-11-19 의뢰처 확인: 증빙 확인으로 표기
+    {
+      key: 'license', label: '전문 자격', status: 'done', by: '증빙 확인', at: '2026-11-19',
+      detail: ['생명보험 판매자격', '손해보험 판매자격', '자격 취득 5개월']
+    },
+    { key: 'email', label: '회사 이메일', status: 'none' },
+    { key: 'business', label: '사업자 등록', status: 'none' },
+    // 실제로 조회한 뒤에만 status 를 done 으로 바꾸고 at 에 조회일을 적는다
+    { key: 'fraud', label: '번호 피해 이력', status: 'none', text: '등록된 피해 사례 없음', note: '연동 예정 · 시연' }
+  ]
+});
+
+/* js/core.js */
+/*
+ * 트러스트 파이프라인 MVP — 화면과 저장소에 기대지 않는 순수 로직.
+ * 브라우저에서는 window.TPCore, Node 테스트에서는 require()로 쓴다.
+ * 날짜는 모두 한국 시간 기준 'YYYY-MM-DD', 일정 시각은 'YYYY-MM-DDTHH' 문자열이다.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.TPCore = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+  var DAY_MS = 24 * 60 * 60 * 1000;
+  var WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+  var BOOKING_WEEKS = 4;
+  var MIN_VISITORS_FOR_RATE = 10;
+  var NAME_MIN = 2;
+  var NAME_MAX = 20;
+
+  var SOURCES = ['kakao', 'sms', 'qr', 'preview'];
+  var SOURCE_LABELS = { kakao: '카카오톡', sms: '문자', qr: 'QR' };
+  var EVENT_NAMES = [
+    'card_view', 'card_flip', 'verify_open', 'click_save_contact', 'schedule_open',
+    'schedule_date_select', 'schedule_time_select', 'schedule_submit',
+    'click_call', 'click_sms', 'click_email', 'click_sns', 'notice_open'
+  ];
+  // 명함 활동으로 세는 이벤트와 묶음
+  var ACTION_GROUPS = {
+    verify_open: 'verify', click_save_contact: 'save', schedule_open: 'schedule', card_flip: 'flip',
+    click_call: 'icons', click_sms: 'icons', click_email: 'icons', click_sns: 'icons'
+  };
+  var STEP_LABELS = {
+    verify_open: '인증내역 확인', click_save_contact: '전화 저장', card_flip: '명함 뒤집기',
+    schedule_open: '일정 열람', schedule_submit: '일정 신청',
+    click_call: '전화', click_sms: '문자', click_email: '메일', click_sns: 'SNS·홈페이지'
+  };
+  var BADGE_LABELS = { valid: '인증 유효', partial: '일부 확인', expired: '인증 만료', none: '' };
+  var STATUS_LABELS = { new: '신규', contacted: '연락 완료', confirmed: '미팅 확정', closed: '종료' };
+  var MESSAGES = {
+    name: '이름을 입력해 주세요',
+    phone: '휴대폰 번호를 확인해 주세요',
+    consent: '동의가 필요합니다'
+  };
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* ---------- 날짜 ---------- */
+
+  function toUtcMs(dateStr) {
+    var p = String(dateStr).split('-');
+    return Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+
+  function fromUtcMs(ms) {
+    var d = new Date(ms);
+    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+
+  function toMs(ts) { return typeof ts === 'number' ? ts : Date.parse(ts); }
+
+  /** @param {number} ms @returns {string} 한국 시간 날짜 */
+  function kstDate(ms) { return fromUtcMs(ms + KST_OFFSET_MS); }
+
+  function kstParts(ms) {
+    var d = new Date(ms + KST_OFFSET_MS);
+    return { month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes() };
+  }
+
+  /** @param {string} dateStr @param {number} n @returns {string} */
+  function addDays(dateStr, n) { return fromUtcMs(toUtcMs(dateStr) + n * DAY_MS); }
+
+  /** @param {string} dateStr @returns {number} 0(일)~6(토) */
+  function weekday(dateStr) { return new Date(toUtcMs(dateStr)).getUTCDay(); }
+
+  /**
+   * @param {number} year @param {number} month 1~12
+   * @returns {Array<Array<string|null>>} 일요일부터 시작하는 주 단위 배열
+   */
+  function monthGrid(year, month) {
+    var first = year + '-' + pad2(month) + '-01';
+    var daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    var cells = [];
+    var i;
+    for (i = 0; i < weekday(first); i++) cells.push(null);
+    for (i = 1; i <= daysInMonth; i++) cells.push(year + '-' + pad2(month) + '-' + pad2(i));
+    while (cells.length % 7 !== 0) cells.push(null);
+    var weeks = [];
+    for (i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+    return weeks;
+  }
+
+  /** @param {string} today @returns {{first:string,last:string}} 내일부터 4주 뒤까지 */
+  function bookingWindow(today) {
+    return { first: addDays(today, 1), last: addDays(today, BOOKING_WEEKS * 7) };
+  }
+
+  function slotKey(dateStr, hour) { return dateStr + 'T' + pad2(hour); }
+
+  function parseSlot(key) {
+    var p = String(key).split('T');
+    return { date: p[0], hour: Number(p[1]) };
+  }
+
+  /**
+   * @param {string} dateStr
+   * @param {{days:number[],hours:number[]}} hours 상담 요일과 시작 시각
+   * @param {string[]} closedKeys 마감된 시각
+   */
+  function slotsFor(dateStr, hours, closedKeys) {
+    var closed = closedKeys || [];
+    return hours.hours.map(function (h) {
+      var key = slotKey(dateStr, h);
+      return {
+        hour: h,
+        key: key,
+        label: (h > 12 ? h - 12 : h) + ':00',
+        period: h < 12 ? '오전' : '오후',
+        closed: closed.indexOf(key) !== -1
+      };
+    });
+  }
+
+  function isSelectable(dateStr, today, hours, closedKeys) {
+    var w = bookingWindow(today);
+    if (dateStr < w.first || dateStr > w.last) return false;
+    if (hours.days.indexOf(weekday(dateStr)) === -1) return false;
+    return slotsFor(dateStr, hours, closedKeys).some(function (s) { return !s.closed; });
+  }
+
+  function slotTimeText(hour) {
+    return (hour < 12 ? '오전 ' : '오후 ') + (hour > 12 ? hour - 12 : hour) + ':00';
+  }
+
+  /** '2026-11-20T15' → '11월 20일(금) 오후 3:00' */
+  function formatSlot(key) {
+    var s = parseSlot(key);
+    var p = s.date.split('-');
+    return Number(p[1]) + '월 ' + Number(p[2]) + '일(' + WEEKDAY_NAMES[weekday(s.date)] + ') ' + slotTimeText(s.hour);
+  }
+
+  /** '2026-11-20T15' → '11/20(금) 오후 3:00' */
+  function formatSlotShort(key) {
+    var s = parseSlot(key);
+    var p = s.date.split('-');
+    return Number(p[1]) + '/' + Number(p[2]) + '(' + WEEKDAY_NAMES[weekday(s.date)] + ') ' + slotTimeText(s.hour);
+  }
+
+  /** @param {number|string} ts @returns {string} '11/19 14:05' */
+  function formatStamp(ts) {
+    var k = kstParts(toMs(ts));
+    return k.month + '/' + k.day + ' ' + pad2(k.hour) + ':' + pad2(k.minute);
+  }
+
+  function formatStampLong(ts) {
+    var k = kstParts(toMs(ts));
+    return k.month + '월 ' + k.day + '일 ' + pad2(k.hour) + ':' + pad2(k.minute);
+  }
+
+  /** '2026-11-16' → '2026. 11. 16.' */
+  function formatDotDate(dateStr) {
+    var p = String(dateStr).split('-');
+    return Number(p[0]) + '. ' + Number(p[1]) + '. ' + Number(p[2]) + '.';
+  }
+
+  /* ---------- 연락처와 입력 검사 ---------- */
+
+  function digits(value) { return String(value == null ? '' : value).replace(/\D/g, ''); }
+
+  /** 숫자만 받아 하이픈을 넣는다. 입력 도중에도 쓴다. */
+  function formatPhone(value) {
+    var d = digits(value).slice(0, 11);
+    if (d.length < 4) return d;
+    if (d.length < 8) return d.slice(0, 3) + '-' + d.slice(3);
+    if (d.length === 10 && d.slice(0, 3) !== '010') return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+    return d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7);
+  }
+
+  /** 010은 11자리, 그 밖의 01x는 10~11자리 */
+  function isMobile(value) {
+    var d = digits(value);
+    return /^010\d{8}$/.test(d) || /^01[1-9]\d{7,8}$/.test(d);
+  }
+
+  function maskPhone(value) {
+    var d = digits(value);
+    if (d.length === 11) return d.slice(0, 3) + '-****-' + d.slice(7);
+    if (d.length === 10) return d.slice(0, 3) + '-***-' + d.slice(6);
+    return formatPhone(d);
+  }
+
+  /** @returns {{name?:string,phone?:string,consent?:string}} 오류가 있는 항목만 담는다 */
+  function validateBooking(input) {
+    var errors = {};
+    var name = String(input.name == null ? '' : input.name).trim();
+    if (name.length < NAME_MIN || name.length > NAME_MAX) errors.name = MESSAGES.name;
+    if (!isMobile(input.phone)) errors.phone = MESSAGES.phone;
+    if (!input.consent) errors.consent = MESSAGES.consent;
+    return errors;
+  }
+
+  /* ---------- 인증 ---------- */
+
+  /** 기능명세서 7.3 뱃지 규칙. 상태값: done / pending / expired / none(미제출) */
+  function badgeState(items) {
+    var employment = (items || []).filter(function (i) { return i.key === 'employment'; })[0];
+    if (!employment || employment.status === 'pending' || employment.status === 'none') return 'none';
+    if (employment.status === 'expired') return 'expired';
+    var hasOpen = items.some(function (i) { return i.status === 'pending' || i.status === 'expired'; });
+    return hasOpen ? 'partial' : 'valid';
+  }
+
+  function badgeLabel(state) { return BADGE_LABELS[state] || ''; }
+
+  function visibleItems(items) {
+    return (items || []).filter(function (i) { return i.status !== 'none'; });
+  }
+
+  function statusText(item) {
+    if (item.status === 'done') return '확인 완료' + (item.by ? ' · ' + item.by : '');
+    if (item.status === 'pending') return '확인 대기';
+    if (item.status === 'expired') return '만료' + (item.expiredAt ? ' · ' + formatDotDate(item.expiredAt) : '');
+    return '미제출';
+  }
+
+  /**
+   * 인증내역 한 줄에 보여줄 글. main 은 상태, subs 는 그 아래 작은 글(세부 내용, 확인 시점).
+   * detail 은 글자 하나 또는 목록(자격 이름, 경력 등)이다. 확인이 끝난 항목에만 붙인다.
+   * @returns {{main:string, subs:string[]}}
+   */
+  function verifyLines(item) {
+    var isDone = item.status === 'done';
+    var main = isDone && item.text ? item.text : statusText(item);
+    if (!isDone) return { main: main, subs: [] };
+    var subs = [].concat(item.detail || []);
+    if (item.at) subs.push(item.note ? '조회 ' + formatDotDate(item.at) + ' · ' + item.note : formatDotDate(item.at) + ' 기준');
+    return { main: main, subs: subs };
+  }
+
+  /** 확인 완료 항목 가운데 가장 최근 확인 날짜. 없으면 빈 문자열 */
+  function latestCheck(items) {
+    return (items || []).reduce(function (latest, i) {
+      return i.status === 'done' && i.at && i.at > latest ? i.at : latest;
+    }, '');
+  }
+
+  /* ---------- 유입 경로와 이벤트 ---------- */
+
+  /** 주소의 src 값을 읽는다. 정해진 값이 아니면 빈 문자열 */
+  function parseSrc(search) {
+    var m = /[?&]src=([^&#]*)/.exec(String(search || ''));
+    if (!m) return '';
+    var value;
+    try { value = decodeURIComponent(m[1]).toLowerCase(); } catch (e) { return ''; }
+    return SOURCES.indexOf(value) !== -1 ? value : '';
+  }
+
+  function srcLabel(src) { return SOURCE_LABELS[src] || '기타'; }
+
+  function deviceType(userAgent) {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(String(userAgent || '')) ? 'mobile' : 'desktop';
+  }
+
+  function isEventName(name) { return EVENT_NAMES.indexOf(name) !== -1; }
+
+  /* ---------- 인사이트 ---------- */
+
+  function dateInPeriod(dateStr, period, nowMs) {
+    var today = kstDate(nowMs);
+    if (period === 'today') return dateStr === today;
+    if (period === 'week') return dateStr >= addDays(today, -6) && dateStr <= today;
+    return true;
+  }
+
+  function eventsInPeriod(events, period, nowMs) {
+    return (events || []).filter(function (e) {
+      return e.src !== 'preview' && dateInPeriod(kstDate(toMs(e.ts)), period, nowMs);
+    });
+  }
+
+  /**
+   * @param {{events:Array,deliveries:Array}} data
+   * @param {'today'|'week'|'all'} period
+   * @param {number} nowMs
+   */
+  function summarize(data, period, nowMs) {
+    var events = eventsInPeriod(data.events, period, nowMs);
+    var sources = { kakao: 0, sms: 0, qr: 0, etc: 0 };
+    var actionsBy = { verify: 0, save: 0, schedule: 0, flip: 0, icons: 0 };
+    var visitorIds = {};
+    var views = 0;
+    var actions = 0;
+    var bookingCount = 0;
+
+    events.forEach(function (e) {
+      if (e.name === 'card_view') {
+        views += 1;
+        visitorIds[e.sid] = true;
+        sources[SOURCE_LABELS[e.src] ? e.src : 'etc'] += 1;
+      }
+      if (e.name === 'schedule_submit') bookingCount += 1;
+      var group = ACTION_GROUPS[e.name];
+      if (group) { actionsBy[group] += 1; actions += 1; }
+    });
+
+    var visitors = Object.keys(visitorIds).length;
+    var delivered = (data.deliveries || []).reduce(function (sum, d) {
+      return dateInPeriod(d.date, period, nowMs) ? sum + Number(d.count || 0) : sum;
+    }, 0);
+    var viewRate = delivered > 0 && visitors >= MIN_VISITORS_FOR_RATE ? Math.round((visitors / delivered) * 100) : null;
+
+    return {
+      views: views, visitors: visitors, actions: actions, bookingCount: bookingCount,
+      delivered: delivered, viewRate: viewRate, sources: sources, actionsBy: actionsBy
+    };
+  }
+
+  function visitSteps(names) {
+    var hasBooking = names.indexOf('schedule_submit') !== -1;
+    var steps = [];
+    names.forEach(function (name) {
+      if (name === 'schedule_open' && hasBooking) return;
+      var label = STEP_LABELS[name];
+      if (label && steps.indexOf(label) === -1) steps.push(label);
+    });
+    return steps.length ? steps : ['열람'];
+  }
+
+  /** 같은 방문자의 같은 날 활동을 한 줄로 묶어 최신순으로 돌려준다. 신원 정보는 담지 않는다. */
+  function recentVisits(events, period, nowMs, limit) {
+    var byVisit = {};
+    var order = [];
+    eventsInPeriod(events, period, nowMs)
+      .map(function (e) { return { name: e.name, src: e.src, sid: e.sid, ms: toMs(e.ts) }; })
+      .sort(function (a, b) { return a.ms - b.ms; })
+      .forEach(function (e) {
+        var key = e.sid + '|' + kstDate(e.ms);
+        if (!byVisit[key]) { byVisit[key] = { src: e.src, ts: e.ms, names: [] }; order.push(key); }
+        byVisit[key].ts = e.ms;
+        byVisit[key].names.push(e.name);
+      });
+
+    var visits = order.map(function (key) {
+      var v = byVisit[key];
+      return {
+        src: v.src, label: srcLabel(v.src), ts: v.ts,
+        steps: visitSteps(v.names),
+        hasBooking: v.names.indexOf('schedule_submit') !== -1
+      };
+    }).sort(function (a, b) { return b.ts - a.ts; });
+
+    return typeof limit === 'number' ? visits.slice(0, limit) : visits;
+  }
+
+  function deliveryTotals(deliveries, today) {
+    return (deliveries || []).reduce(function (acc, d) {
+      var count = Number(d.count || 0);
+      return { today: acc.today + (d.date === today ? count : 0), total: acc.total + count };
+    }, { today: 0, total: 0 });
+  }
+
+  function bookingCounts(bookings) {
+    return (bookings || []).reduce(function (acc, b) {
+      var next = { all: acc.all + 1, new: acc.new, contacted: acc.contacted, confirmed: acc.confirmed, closed: acc.closed };
+      if (Object.prototype.hasOwnProperty.call(STATUS_LABELS, b.status)) next[b.status] += 1;
+      return next;
+    }, { all: 0, new: 0, contacted: 0, confirmed: 0, closed: 0 });
+  }
+
+  function statusLabel(status) { return STATUS_LABELS[status] || ''; }
+
+  function sortBookings(bookings) {
+    return (bookings || []).slice().sort(function (a, b) { return toMs(b.createdAt) - toMs(a.createdAt); });
+  }
+
+  /* ---------- 공유 ---------- */
+
+  function vcardEscape(value) {
+    return String(value).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+
+  /** 연락처 파일(vCard 3.0) 내용을 만든다. 빈 항목은 줄을 넣지 않는다. */
+  function buildVCard(card, url) {
+    var lines = ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + vcardEscape(card.name) + ';;;;', 'FN:' + vcardEscape(card.name)];
+    if (card.company) lines.push('ORG:' + vcardEscape(card.company) + (card.division ? ';' + vcardEscape(card.division) : ''));
+    if (card.title) lines.push('TITLE:' + vcardEscape(card.title));
+    var phone = String(card.phone || '').replace(/[^\d+\-]/g, '');
+    if (phone) lines.push('TEL;TYPE=CELL:' + phone);
+    if (card.email) lines.push('EMAIL:' + vcardEscape(card.email));
+    if (url) lines.push('URL:' + url);
+    lines.push('END:VCARD');
+    return lines.join('\r\n') + '\r\n';
+  }
+
+  function shareUrl(base, src) {
+    return base + (base.indexOf('?') === -1 ? '?' : '&') + 'src=' + encodeURIComponent(src);
+  }
+
+  return {
+    WEEKDAY_NAMES: WEEKDAY_NAMES, EVENT_NAMES: EVENT_NAMES, STATUS_LABELS: STATUS_LABELS,
+    kstDate: kstDate, addDays: addDays, weekday: weekday, monthGrid: monthGrid,
+    bookingWindow: bookingWindow, slotKey: slotKey, parseSlot: parseSlot, slotsFor: slotsFor, isSelectable: isSelectable,
+    formatSlot: formatSlot, formatSlotShort: formatSlotShort, formatStamp: formatStamp,
+    formatStampLong: formatStampLong, formatDotDate: formatDotDate,
+    digits: digits, formatPhone: formatPhone, isMobile: isMobile, maskPhone: maskPhone, validateBooking: validateBooking,
+    badgeState: badgeState, badgeLabel: badgeLabel, visibleItems: visibleItems, statusText: statusText,
+    verifyLines: verifyLines, latestCheck: latestCheck,
+    parseSrc: parseSrc, srcLabel: srcLabel, deviceType: deviceType, isEventName: isEventName,
+    summarize: summarize, recentVisits: recentVisits, deliveryTotals: deliveryTotals,
+    bookingCounts: bookingCounts, statusLabel: statusLabel, sortBookings: sortBookings,
+    buildVCard: buildVCard, shareUrl: shareUrl
+  };
+});
+
+/* js/store.js */
+/*
+ * 저장소 연결부. 화면은 이 파일의 함수만 부른다.
+ *  - config.apiUrl 이 있으면 구글 스프레드시트(Apps Script 웹 앱)에 저장한다.
+ *  - 비어 있고 내 컴퓨터(localhost)에서 열었으면 이 브라우저(localStorage)에만 저장한다. PC 확인용이다.
+ *  - 주소가 잘못됐거나, 배포한 곳인데 주소가 비어 있으면 저장하지 않고 실패를 돌려준다.
+ *    (고객에게 "접수되었습니다"를 보여주고 실제로는 아무 데도 전달되지 않는 일을 막는다)
+ * 모든 함수는 { success, data, error } 를 담은 Promise 를 돌려주고, 실패해도 reject 하지 않는다.
+ */
+(function (root) {
+  'use strict';
+
+  var Core = root.TPCore;
+  var VISITOR_KEY = 'tp_sid';
+  var TOKEN_KEY = 'tp_token';
+  var SELLER_KEY_STORE = 'tp_seller_key';
+  var ONCE_TIMEOUT_MS = 15000;  // 한 번만 보내는 요청(신청, 접속, 이벤트)을 기다리는 시간
+  var RETRY_TIMEOUT_MS = 8000;  // 다시 보내도 되는 요청의 한 번당 기다리는 시간
+  var DEDUPE_VERSION = 2;       // 스크립트(Code.gs)가 요청 번호로 중복 저장을 막기 시작한 판 번호
+  var API_URL_PATTERN = /^https:\/\/script\.google\.com\/[A-Za-z0-9_.\-\/]+\/exec$/;
+  var LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', ''];
+  var LOCAL_DATA_KEY = 'tp_local_v1';
+  var LOCAL_LOCK_KEY = 'tp_local_lock';
+  var LOCAL_TOKEN = 'local';
+  var PIN_MAX_FAILS = 5;
+  var PIN_LOCK_MS = 60 * 1000;
+  var MEMO_MAX = 500;
+  var PURPOSE_MAX = 100;
+  var DELIVERY_MAX = 9999;
+  var STATUSES = Object.keys(Core.STATUS_LABELS);
+
+  function ok(data) { return { success: true, data: data, error: null }; }
+  function fail(code, data) { return { success: false, data: data || null, error: code }; }
+
+  /* 저장 공간은 사생활 보호 모드 등에서 막혀 있을 수 있어 모두 감싼다 */
+  function storageOf(kind) {
+    try { return kind === 'session' ? root.sessionStorage : root.localStorage; } catch (error) { return null; }
+  }
+  function storageGet(kind, key) {
+    try { var s = storageOf(kind); return s ? s.getItem(key) : null; } catch (error) { return null; }
+  }
+  function storageSet(kind, key, value) {
+    try { var s = storageOf(kind); if (!s) return false; s.setItem(key, value); return true; } catch (error) { return false; }
+  }
+  function storageRemove(kind, key) {
+    try { var s = storageOf(kind); if (s) s.removeItem(key); } catch (error) { /* 지울 수 없으면 둔다 */ }
+  }
+
+  function randomId(byteLength) {
+    var bytes = new Uint8Array(byteLength);
+    root.crypto.getRandomValues(bytes);
+    return Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+
+  /**
+   * 영업자 관리 링크(seller.html#k=…)의 비밀 값을 이 브라우저에 보관하고 주소창에서는 지운다.
+   * # 뒤의 값은 서버 기록이나 다른 사이트로 전달되지 않는다.
+   */
+  function captureSellerKey() {
+    var match = /[#&]k=([A-Za-z0-9]{32,128})(?:&|$)/.exec(root.location.hash || '');
+    if (!match) return false;
+    storageSet('local', SELLER_KEY_STORE, match[1]);
+    try {
+      root.history.replaceState(null, '', root.location.pathname + root.location.search);
+    } catch (error) { /* 주소를 바꾸지 못해도 접속에는 문제없다 */ }
+    return true;
+  }
+
+  /**
+   * 접속 화면에 붙여 넣은 글에서 관리 링크 값만 골라 보관한다.
+   * 스프레드시트 메뉴에 나온 글('seller.html#k=…')을 통째로 붙여도 된다.
+   * @returns {boolean} 값을 찾아 보관했으면 true
+   */
+  function saveSellerKey(text) {
+    var match = /(?:^|[^A-Za-z0-9])([A-Za-z0-9]{32,128})(?![A-Za-z0-9])/.exec(String(text == null ? '' : text));
+    return match ? storageSet('local', SELLER_KEY_STORE, match[1]) : false;
+  }
+
+  var memoryVisitorId = null;
+  /** 브라우저 단위 익명 ID. 이벤트 기록에는 이 값만 남기고 이름·연락처는 넣지 않는다. */
+  function visitorId() {
+    var saved = storageGet('local', VISITOR_KEY);
+    if (saved && /^[A-Za-z0-9_-]{8,64}$/.test(saved)) return saved;
+    memoryVisitorId = memoryVisitorId || randomId(16);
+    storageSet('local', VISITOR_KEY, memoryVisitorId);
+    return memoryVisitorId;
+  }
+
+  function isSignedIn() { return Boolean(storageGet('session', TOKEN_KEY)); }
+  function logout() { storageRemove('session', TOKEN_KEY); }
+
+  /* ---------- 구글 스프레드시트 ---------- */
+
+  function createRemote(config, ctx) {
+    var serverVersion = 0; // 응답을 한 번이라도 받아야 알 수 있다
+
+    function send(method, payload, timeoutMs) {
+      var isGet = method === 'GET';
+      var url = isGet ? config.apiUrl + '?' + new URLSearchParams(payload).toString() : config.apiUrl;
+      // text/plain 으로 보내면 사전 요청(preflight) 없이 Apps Script 가 받는다
+      var options = isGet ? { method: 'GET' } : {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        keepalive: payload.action === 'event'
+      };
+      // 응답이 오지 않으면 화면이 멈춘 채 남지 않도록 일정 시간 뒤에 끊는다
+      var controller = typeof root.AbortController === 'function' ? new root.AbortController() : null;
+      var timer = controller ? setTimeout(function () { controller.abort(); }, config.timeoutMs || timeoutMs) : null;
+      if (controller) options.signal = controller.signal;
+      return root.fetch(url, options)
+        .then(function (response) {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.json();
+        })
+        .then(function (json) {
+          if (!json || typeof json.success !== 'boolean') return fail('server');
+          if (typeof json.v === 'number') serverVersion = json.v;
+          return json;
+        })
+        .catch(function () { return fail('network'); })
+        .then(function (result) {
+          clearTimeout(timer);
+          return result;
+        });
+    }
+
+    /** 한 번만 보낸다. 같은 내용이 두 번 저장되면 안 되는 요청(신청, 이벤트)과 횟수를 세는 요청(접속)에 쓴다. */
+    function request(method, payload) { return send(method, payload, ONCE_TIMEOUT_MS); }
+
+    /** 응답이 없으면 한 번 더 보낸다. 두 번 받아도 결과가 같은 요청(조회, 값을 정해 넣는 저장)에만 쓴다. */
+    function requestWithRetry(method, payload) {
+      return send(method, payload, RETRY_TIMEOUT_MS).then(function (result) {
+        return result.error === 'network' ? send(method, payload, RETRY_TIMEOUT_MS) : result;
+      });
+    }
+
+    /**
+     * 신청·이벤트처럼 두 번 저장되면 안 되는 요청. 요청 번호를 붙여 보내고,
+     * 응답이 없을 때 스크립트가 그 번호로 중복을 걸러 준다는 것을 알고 있을 때만 같은 번호로 한 번 더 보낸다.
+     */
+    function requestWrite(payload) {
+      var body = Object.assign({ rid: randomId(12) }, payload);
+      return send('POST', body, RETRY_TIMEOUT_MS).then(function (result) {
+        var canRetry = result.error === 'network' && serverVersion >= DEDUPE_VERSION;
+        return canRetry ? send('POST', body, ONCE_TIMEOUT_MS) : result;
+      });
+    }
+
+    function sellerRequest(payload) {
+      var body = Object.assign({ token: storageGet('session', TOKEN_KEY) || '' }, payload);
+      return requestWithRetry('POST', body).then(function (result) {
+        if (result.error === 'auth') logout();
+        return result;
+      });
+    }
+
+    return {
+      mode: 'remote',
+      logEvent: function (name, props) {
+        return requestWrite({
+          action: 'event', cardId: config.cardId, sid: ctx.sid, name: name,
+          props: props || {}, src: ctx.src, device: ctx.device
+        });
+      },
+      getSlots: function () { return requestWithRetry('GET', { action: 'slots', cardId: config.cardId }); },
+      book: function (input) {
+        return requestWrite(Object.assign({ action: 'book', cardId: config.cardId, sid: ctx.sid, consent: true }, input));
+      },
+      login: function (pin) {
+        var key = storageGet('local', SELLER_KEY_STORE) || '';
+        return request('POST', { action: 'login', pin: pin, key: key }).then(function (result) {
+          // 값이 틀렸으면 지워서 접속 화면이 다시 묻게 한다
+          if (result.error === 'key') storageRemove('local', SELLER_KEY_STORE);
+          if (!result.success) return result;
+          storageSet('session', TOKEN_KEY, result.data.token);
+          return ok({});
+        });
+      },
+      dashboard: function () { return sellerRequest({ action: 'dashboard' }); },
+      updateBooking: function (id, patch) { return sellerRequest(Object.assign({ action: 'updateBooking', id: id }, patch)); },
+      setDelivery: function (date, count) {
+        return sellerRequest({ action: 'setDelivery', cardId: config.cardId, date: date, count: count });
+      }
+    };
+  }
+
+  /* ---------- 이 브라우저 안 (PC 확인용) ---------- */
+
+  function createLocal(config, ctx) {
+    var EMPTY = { events: [], bookings: [], deliveries: [] };
+
+    function read() {
+      try {
+        var data = JSON.parse(storageGet('local', LOCAL_DATA_KEY) || 'null');
+        var valid = data && Array.isArray(data.events) && Array.isArray(data.bookings) && Array.isArray(data.deliveries);
+        return valid ? data : EMPTY;
+      } catch (error) {
+        return EMPTY;
+      }
+    }
+    function write(data) { return storageSet('local', LOCAL_DATA_KEY, JSON.stringify(data)); }
+    function done(result) { return Promise.resolve(result); }
+    function saved(data, result) { return done(write(data) ? result : fail('server')); }
+    function seller(fn) {
+      return function () {
+        return storageGet('session', TOKEN_KEY) === LOCAL_TOKEN ? fn.apply(null, arguments) : done(fail('auth'));
+      };
+    }
+
+    function logEvent(name, props) {
+      if (!Core.isEventName(name)) return done(fail('invalid'));
+      var data = read();
+      var event = {
+        ts: new Date().toISOString(), cardId: config.cardId, sid: ctx.sid, name: name,
+        props: props || {}, src: ctx.src, device: ctx.device
+      };
+      return saved(Object.assign({}, data, { events: data.events.concat([event]) }), ok({}));
+    }
+
+    /** '종료'로 바꾼 신청은 그 시간을 다시 연다 (스프레드시트 쪽과 같은 규칙). */
+    function closedSlots(data) {
+      return data.bookings.filter(function (b) { return b.status !== 'closed'; }).map(function (b) { return b.slot; });
+    }
+
+    function getSlots() {
+      return done(ok({ closed: closedSlots(read()), hours: ctx.hours, today: Core.kstDate(Date.now()) }));
+    }
+
+    function book(input) {
+      var data = read();
+      var today = Core.kstDate(Date.now());
+      var slot = Core.parseSlot(input.slot);
+      var errors = Core.validateBooking({ name: input.name, phone: input.phone, consent: true });
+      var slotAllowed = Core.isSelectable(slot.date, today, ctx.hours, []) && ctx.hours.hours.indexOf(slot.hour) !== -1;
+      if (Object.keys(errors).length || !slotAllowed) return done(fail('invalid'));
+      if (closedSlots(data).indexOf(input.slot) !== -1) return done(fail('closed'));
+
+      var now = new Date().toISOString();
+      var booking = {
+        id: randomId(8), cardId: config.cardId, slot: input.slot,
+        name: String(input.name).trim(), phone: Core.digits(input.phone),
+        purpose: String(input.purpose || '').trim().slice(0, PURPOSE_MAX),
+        consentAt: now, status: 'new', memo: '', createdAt: now, updatedAt: now
+      };
+      return saved(Object.assign({}, data, { bookings: data.bookings.concat([booking]) }), ok({ id: booking.id }));
+    }
+
+    function login(pin) {
+      var lock = { fails: 0, until: 0 };
+      try { lock = Object.assign(lock, JSON.parse(storageGet('local', LOCAL_LOCK_KEY) || '{}')); } catch (error) { /* 기본값 사용 */ }
+      if (lock.until > Date.now()) return done(fail('locked', { wait: Math.ceil((lock.until - Date.now()) / 1000) }));
+
+      if (typeof config.demoPin === 'string' && pin === config.demoPin) {
+        storageRemove('local', LOCAL_LOCK_KEY);
+        storageSet('session', TOKEN_KEY, LOCAL_TOKEN);
+        return done(ok({}));
+      }
+      var fails = (lock.until ? 0 : Number(lock.fails) || 0) + 1;
+      if (fails >= PIN_MAX_FAILS) {
+        storageSet('local', LOCAL_LOCK_KEY, JSON.stringify({ fails: 0, until: Date.now() + PIN_LOCK_MS }));
+        return done(fail('locked', { wait: PIN_LOCK_MS / 1000 }));
+      }
+      storageSet('local', LOCAL_LOCK_KEY, JSON.stringify({ fails: fails, until: 0 }));
+      return done(fail('wrong', { fails: fails, max: PIN_MAX_FAILS }));
+    }
+
+    function dashboard() {
+      var data = read();
+      var events = data.events.map(function (e) { return { ts: e.ts, sid: e.sid, name: e.name, src: e.src }; });
+      return done(ok({ events: events, bookings: data.bookings, deliveries: data.deliveries, hours: ctx.hours }));
+    }
+
+    function updateBooking(id, patch) {
+      var data = read();
+      var change = {};
+      if (patch.status !== undefined) {
+        if (STATUSES.indexOf(patch.status) === -1) return done(fail('invalid'));
+        change.status = patch.status;
+      }
+      if (patch.memo !== undefined) change.memo = String(patch.memo).slice(0, MEMO_MAX);
+      if (!data.bookings.some(function (b) { return b.id === id; })) return done(fail('not_found'));
+      change.updatedAt = new Date().toISOString();
+      var bookings = data.bookings.map(function (b) { return b.id === id ? Object.assign({}, b, change) : b; });
+      return saved(Object.assign({}, data, { bookings: bookings }), ok({}));
+    }
+
+    function setDelivery(date, count) {
+      var valid = typeof count === 'number' && count % 1 === 0 && count >= 0 && count <= DELIVERY_MAX;
+      if (!valid || date > Core.kstDate(Date.now())) return done(fail('invalid'));
+      var data = read();
+      var exists = data.deliveries.some(function (d) { return d.date === date; });
+      var deliveries = exists
+        ? data.deliveries.map(function (d) { return d.date === date ? { date: date, count: count } : d; })
+        : data.deliveries.concat([{ date: date, count: count }]);
+      return saved(Object.assign({}, data, { deliveries: deliveries }), ok({}));
+    }
+
+    return {
+      mode: 'local',
+      logEvent: logEvent, getSlots: getSlots, book: book, login: login,
+      dashboard: seller(dashboard), updateBooking: seller(updateBooking), setDelivery: seller(setDelivery)
+    };
+  }
+
+  /**
+   * @param {{cardId:string, apiUrl:string, demoPin:string}} config
+   * @param {{hours:{days:number[],hours:number[]}}} card
+   */
+  /* ---------- 저장소가 연결되지 않은 상태 ---------- */
+
+  function createUnavailable() {
+    var refuse = function () { return Promise.resolve(fail('config')); };
+    return {
+      mode: 'unavailable',
+      logEvent: refuse, getSlots: refuse, book: refuse, login: refuse,
+      dashboard: refuse, updateBooking: refuse, setDelivery: refuse
+    };
+  }
+
+  function pickBackend(config, ctx) {
+    var apiUrl = typeof config.apiUrl === 'string' ? config.apiUrl.trim() : '';
+    if (API_URL_PATTERN.test(apiUrl)) return createRemote(Object.assign({}, config, { apiUrl: apiUrl }), ctx);
+    var onThisComputer = LOCAL_HOSTS.indexOf(root.location.hostname) !== -1;
+    return apiUrl === '' && onThisComputer ? createLocal(config, ctx) : createUnavailable();
+  }
+
+  function create(config, card) {
+    captureSellerKey();
+    var src = Core.parseSrc(root.location.search);
+    var ctx = { sid: visitorId(), src: src, device: Core.deviceType(root.navigator.userAgent), hours: card.hours };
+    var backend = pickBackend(config, ctx);
+    var keyListeners = [];
+
+    // 이미 열려 있는 화면의 주소 끝에 #k=… 만 붙이면 화면이 새로 열리지 않으므로, 그때도 값을 받는다
+    if (typeof root.addEventListener === 'function') {
+      root.addEventListener('hashchange', function () {
+        if (captureSellerKey()) keyListeners.forEach(function (listener) { listener(); });
+      });
+    }
+
+    return Object.assign({}, backend, {
+      src: src,
+      isSignedIn: isSignedIn,
+      logout: logout,
+      /** 스프레드시트에 연결된 상태인데 이 브라우저에 관리 링크 값이 없으면 true */
+      needsSellerKey: function () { return backend.mode === 'remote' && !storageGet('local', SELLER_KEY_STORE); },
+      saveSellerKey: saveSellerKey,
+      onSellerKey: function (listener) { keyListeners.push(listener); },
+      // '고객 화면으로 보기'(src=preview)로 연 접속은 기록하지 않는다
+      logEvent: function (name, props) {
+        return src === 'preview' ? Promise.resolve(ok({})) : backend.logEvent(name, props);
+      }
+    });
+  }
+
+  root.TPStore = { create: create };
+})(window);
+
+/* js/ui.js */
+/*
+ * 고객용·영업자용 화면이 함께 쓰는 화면 도구.
+ * 글자는 모두 textContent 로 넣는다. innerHTML 은 이 파일에 적어 둔 아이콘 도형에만 쓴다.
+ */
+(function (root) {
+  'use strict';
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var TOAST_MS = 2600;
+  var ICONS = {
+    contact: '<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5c.7-1.7 2-2.5 3.5-2.5s2.8.8 3.5 2.5"/>',
+    calendar: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>',
+    phone: '<path d="M6.5 4h3l1.5 4-2 1.5a11 11 0 005.5 5.5l1.5-2 4 1.5v3a2 2 0 01-2 2A15.5 15.5 0 014.5 6a2 2 0 012-2z"/>',
+    chat: '<path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v7a2.5 2.5 0 01-2.5 2.5H10l-4.5 4v-4A2.5 2.5 0 014 13.5v-7z"/>',
+    mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7.5l8 6 8-6"/>',
+    at: '<circle cx="12" cy="12" r="3.5"/><path d="M15.5 8.5v5a2.3 2.3 0 004.5 0V12a8 8 0 10-3.2 6.4"/>',
+    globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    left: '<path d="M14.5 6l-6 6 6 6"/>',
+    right: '<path d="M9.5 6l6 6-6 6"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    share: '<path d="M12 15V4M8 7.5L12 4l4 3.5M6 12v6.5a1.5 1.5 0 001.5 1.5h9a1.5 1.5 0 001.5-1.5V12"/>',
+    external: '<path d="M9 6h9v9M18 6L7 17"/>',
+    chart: '<path d="M5 20V11M12 20V4M19 20v-6"/>',
+    user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.5-5.5 7-5.5s6.2 1.9 7 5.5"/>',
+    card: '<rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M7 11h5M7 14.5h8"/>',
+    minus: '<path d="M5 12h14"/>',
+    plus: '<path d="M5 12h14M12 5v14"/>'
+  };
+
+  /**
+   * @param {string} name @param {number=} size @param {number=} strokeWidth
+   * @returns {SVGElement}
+   */
+  function icon(name, size, strokeWidth) {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    var attrs = {
+      viewBox: '0 0 24 24', width: size || 24, height: size || 24, fill: 'none', stroke: 'currentColor',
+      'stroke-width': strokeWidth || 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+      'aria-hidden': 'true', focusable: 'false'
+    };
+    Object.keys(attrs).forEach(function (key) { svg.setAttribute(key, attrs[key]); });
+    svg.innerHTML = Object.prototype.hasOwnProperty.call(ICONS, name) ? ICONS[name] : '';
+    return svg;
+  }
+
+  /**
+   * 요소를 만든다. props: class, text, dataset, on<이벤트>, 그 밖은 속성. null/false 는 넣지 않는다.
+   * @param {string} tag @param {Object=} props @param {Array|Node|string=} children
+   * @returns {HTMLElement}
+   */
+  function el(tag, props, children) {
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (key) {
+      var value = props[key];
+      if (value == null || value === false) return;
+      if (key === 'class') node.className = value;
+      else if (key === 'text') node.textContent = value;
+      else if (key === 'dataset') Object.keys(value).forEach(function (k) { node.dataset[k] = value[k]; });
+      else if (key.slice(0, 2) === 'on' && typeof value === 'function') node.addEventListener(key.slice(2), value);
+      else node.setAttribute(key, value === true ? '' : value);
+    });
+    [].concat(children == null ? [] : children).forEach(function (child) {
+      if (child == null || child === false) return;
+      node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+    });
+    return node;
+  }
+
+  /** http(s) 주소만 돌려준다. 아니면 빈 문자열 */
+  function safeUrl(value) {
+    return typeof value === 'string' && /^https?:\/\//i.test(value) ? value : '';
+  }
+
+  /* ---------- 토스트 ---------- */
+
+  var toastTimer = null;
+  function toast(message) {
+    var node = document.getElementById('toast');
+    if (!node) return;
+    node.textContent = message;
+    node.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { node.classList.remove('show'); }, TOAST_MS);
+  }
+
+  /* ---------- 팝업·시트 (한 번에 하나만 연다) ---------- */
+
+  var activeLayer = null;
+
+  function focusableIn(node) {
+    var selector = 'a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled])';
+    return [].slice.call(node.querySelectorAll(selector)).filter(function (n) { return n.offsetParent !== null; });
+  }
+
+  /** data-fk 값이 같은 요소를 찾는다. 화면을 다시 그린 뒤 초점을 되돌릴 때 쓴다. */
+  function findByFocusKey(scope, key) {
+    if (!key) return null;
+    var nodes = scope.querySelectorAll('[data-fk]');
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].dataset.fk === key) return nodes[i];
+    }
+    return null;
+  }
+
+  function closeLayer() {
+    if (!activeLayer) return;
+    var closing = activeLayer;
+    var dim = document.getElementById('dim');
+    activeLayer = null;
+    closing.layer.classList.remove('show');
+    closing.layer.hidden = true;
+    dim.classList.remove('show');
+    dim.hidden = true;
+    document.body.classList.remove('locked');
+    // 연 버튼이 그사이 다시 그려졌으면 같은 자리의 새 버튼으로 초점을 돌려준다
+    var target = closing.restore && document.contains(closing.restore)
+      ? closing.restore
+      : findByFocusKey(document, closing.restoreKey);
+    if (target) target.focus();
+  }
+
+  /**
+   * @param {HTMLElement} layer role="dialog" 요소
+   * @param {{onRequestClose?:Function}=} options 닫기(✕, 바깥 누름, Esc) 요청을 가로챌 때 쓴다
+   */
+  function openLayer(layer, options) {
+    if (activeLayer) closeLayer();
+    var dim = document.getElementById('dim');
+    var opener = document.activeElement;
+    activeLayer = {
+      layer: layer,
+      restore: opener,
+      restoreKey: opener && opener.dataset ? opener.dataset.fk : '',
+      requestClose: (options && options.onRequestClose) || closeLayer
+    };
+    dim.hidden = false;
+    layer.hidden = false;
+    layer.setAttribute('tabindex', '-1');
+    document.body.classList.add('locked');
+    // 숨김을 푼 직후의 모양을 한 번 계산하게 한 뒤 클래스를 붙여야 여는 움직임이 보인다.
+    // requestAnimationFrame 은 화면이 가려진 탭에서 돌지 않아 쓰지 않는다.
+    void layer.offsetWidth;
+    dim.classList.add('show');
+    layer.classList.add('show');
+    layer.focus();
+  }
+
+  function trapTab(event) {
+    var items = focusableIn(activeLayer.layer);
+    if (!items.length) { event.preventDefault(); return; }
+    var first = items[0];
+    var last = items[items.length - 1];
+    var current = document.activeElement;
+    // 다시 그리는 사이 초점이 바깥으로 빠졌으면 안으로 데려온다
+    if (!activeLayer.layer.contains(current)) { event.preventDefault(); first.focus(); return; }
+    if (event.shiftKey && (current === first || current === activeLayer.layer)) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && current === last) { event.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (!activeLayer) return;
+    if (event.key === 'Escape') { event.preventDefault(); activeLayer.requestClose(); }
+    else if (event.key === 'Tab') trapTab(event);
+  });
+
+  document.addEventListener('click', function (event) {
+    if (activeLayer && event.target && event.target.id === 'dim') activeLayer.requestClose();
+  });
+
+  /* ---------- 복사·내려받기 ---------- */
+
+  function fallbackCopy(text) {
+    var area = el('textarea', { class: 'sr-only', readonly: true, 'aria-hidden': 'true' });
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    var copied = false;
+    try { copied = document.execCommand('copy'); } catch (error) { copied = false; }
+    document.body.removeChild(area);
+    return copied;
+  }
+
+  /** @returns {Promise<boolean>} 복사했으면 true */
+  function copyText(text) {
+    if (root.navigator.clipboard && root.isSecureContext) {
+      return root.navigator.clipboard.writeText(text).then(
+        function () { return true; },
+        function () { return fallbackCopy(text); }
+      );
+    }
+    return Promise.resolve(fallbackCopy(text));
+  }
+
+  function download(filename, blob) {
+    var url = URL.createObjectURL(blob);
+    var link = el('a', { href: url, download: filename, class: 'sr-only' });
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function debounce(fn, waitMs) {
+    var timer = null;
+    return function () {
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(null, args); }, waitMs);
+    };
+  }
+
+  /* ---------- 명함 (앞·뒤 이미지, 실패하면 글자 명함) ---------- */
+
+  function textFace(card, isBack) {
+    if (isBack) {
+      return el('span', { class: 'face-text face-text-back' }, [
+        el('span', { class: 'ft-name-sm', text: card.company }),
+        el('span', { class: 'ft-sub', text: card.division })
+      ]);
+    }
+    return el('span', { class: 'face-text' }, [
+      el('span', { class: 'ft-co', text: [card.company, card.division].filter(Boolean).join(' ') }),
+      el('span', { class: 'ft-main' }, [
+        el('span', { class: 'ft-name', text: card.name }),
+        card.title ? el('span', { class: 'ft-sub', text: card.title }) : null
+      ]),
+      el('span', { class: 'ft-co', text: [card.phone, card.email].filter(Boolean).join(' · ') })
+    ]);
+  }
+
+  function fillFace(face, src, alt, makeFallback) {
+    var image = new Image();
+    var show = function (node) {
+      face.textContent = '';
+      face.appendChild(node);
+      face.classList.remove('loading');
+    };
+    image.alt = alt;
+    image.decoding = 'async';
+    image.onload = function () { show(image); };
+    image.onerror = function () { show(makeFallback()); };
+    image.src = src;
+  }
+
+  /**
+   * 뒤집히는 명함 버튼을 만든다. 뒷면 이미지는 첫 화면이 뜬 뒤에 불러온다.
+   * @param {Object} card @param {function(boolean)=} onFlip 뒷면이 보이면 true
+   */
+  function createCard(card, onFlip) {
+    var front = el('span', { class: 'face face-front loading' });
+    var back = el('span', { class: 'face face-back loading' });
+    var label = function (side) { return card.name + ' 명함 ' + side + '. 누르면 뒤집힙니다'; };
+    var button = el('button', { type: 'button', class: 'card', 'aria-pressed': 'false', 'aria-label': label('앞면') }, [
+      el('span', { class: 'card-inner' }, [front, back])
+    ]);
+    var loadBack = function () {
+      fillFace(back, card.images.back, card.name + ' 명함 뒷면', function () { return textFace(card, true); });
+    };
+
+    fillFace(front, card.images.front, card.name + ' 명함 앞면', function () { return textFace(card, false); });
+    if (document.readyState === 'complete') setTimeout(loadBack, 0);
+    else root.addEventListener('load', loadBack, { once: true });
+
+    button.addEventListener('click', function () {
+      var flipped = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(flipped));
+      button.setAttribute('aria-label', label(flipped ? '뒷면' : '앞면'));
+      if (onFlip) onFlip(flipped);
+    });
+    return button;
+  }
+
+  root.TPUI = {
+    icon: icon, el: el, safeUrl: safeUrl, toast: toast,
+    openLayer: openLayer, closeLayer: closeLayer, findByFocusKey: findByFocusKey,
+    copyText: copyText, download: download, debounce: debounce, createCard: createCard
+  };
+})(window);
+
+/* js/customer.js */
+/*
+ * 고객용 화면 (R-01 앞면, R-02 뒷면, R-03 인증내역, R-04 일정 잡기, R-05 신청 완료).
+ * 주소 하나에서 끝난다. 문구는 화면설계서 부록 1의 원문을 쓴다.
+ */
+(function (root) {
+  'use strict';
+
+  var Core = root.TPCore;
+  var UI = root.TPUI;
+  var el = UI.el;
+  var icon = UI.icon;
+  var config = root.TP_CONFIG;
+  var card = root.TP_CARD;
+  var store = root.TPStore.create(config, card);
+  var cardUrl = config.cardUrl || root.location.href.split(/[?#]/)[0];
+
+  var MSG = {
+    hintFront: '명함을 탭하면 뒤집힙니다',
+    hintBack: '다시 탭하면 앞면으로 돌아갑니다',
+    saved: '연락처 파일을 내려받았습니다. 열어서 저장해 주세요.',
+    pickDate: '날짜를 먼저 선택해 주세요',
+    noDate: ['선택할 수 있는 날짜가 없습니다.', '전화 저장 후 직접 문의해 주세요.'],
+    closed: '방금 마감된 시간입니다. 다른 시간을 골라 주세요.',
+    failed: '신청하지 못했습니다. 다시 시도해 주세요.',
+    busy: '요청이 많습니다. 잠시 후 다시 시도해 주세요.',
+    slotsLoading: '일정을 불러오는 중…',
+    slotsFailed: '일정을 불러오지 못했습니다. 다시 시도해 주세요.',
+    confirmClose: '작성 중인 내용이 사라집니다. 닫을까요?',
+    demo: '수동 확인 기반 시연 화면입니다'
+  };
+  var CONSENT_LINES = ['수집 항목: 이름, 연락처, 용건', '목적: 상담 일정 조율', '보관: PoC 종료 시 파기'];
+
+  var sheet = null;
+  var state = null; // 일정 시트 상태. setState 로만 바꾼다
+  var openCount = 0; // 시트를 연 횟수. 닫았다 다시 연 뒤에 도착한 예전 응답을 가려낸다
+  var SLOTS_FRESH_MS = 60 * 1000;
+  var slotsRequest = null; // 가장 최근에 보낸 일정 자료 요청 { at, promise }
+
+  /* ---------- R-01, R-02 ---------- */
+
+  function badgeNode(badge) {
+    if (badge === 'none') return null;
+    return el('span', { class: 'badge', dataset: { state: badge } }, [
+      badge === 'valid' ? icon('check', 10, 3) : null,
+      Core.badgeLabel(badge)
+    ]);
+  }
+
+  function actionButton(action, iconName, label, onClick, extra) {
+    return el('button', { type: 'button', class: 'action', dataset: { action: action }, onclick: onClick }, [
+      icon(iconName, 20), el('span', { text: label }), extra
+    ]);
+  }
+
+  function channelLinks() {
+    var tel = Core.digits(card.phone);
+    var sns = UI.safeUrl(card.sns);
+    var home = UI.safeUrl(card.homepage);
+    var channels = [];
+    if (tel) {
+      channels.push({ ch: 'call', label: '전화 걸기', href: 'tel:' + tel, icon: 'phone', event: 'click_call' });
+      channels.push({ ch: 'sms', label: '문자 보내기', href: 'sms:' + tel, icon: 'chat', event: 'click_sms' });
+    }
+    if (card.email) channels.push({ ch: 'email', label: '메일 보내기', href: 'mailto:' + encodeURIComponent(card.email), icon: 'mail', event: 'click_email' });
+    if (sns) channels.push({ ch: 'sns', label: 'SNS 열기 (새 창)', href: sns, icon: 'at', event: 'click_sns', props: { channel: 'sns' }, external: true });
+    if (home) channels.push({ ch: 'home', label: '홈페이지 열기 (새 창)', href: home, icon: 'globe', event: 'click_sns', props: { channel: 'home' }, external: true });
+
+    return channels.map(function (c) {
+      return el('a', {
+        class: 'icon-link', href: c.href, dataset: { ch: c.ch }, 'aria-label': c.label,
+        target: c.external ? '_blank' : null, rel: c.external ? 'noopener noreferrer' : null,
+        onclick: function () { store.logEvent(c.event, c.props || {}); }
+      }, [icon(c.icon, 20)]);
+    });
+  }
+
+  function saveContact() {
+    store.logEvent('click_save_contact');
+    var blob = new Blob([Core.buildVCard(card, cardUrl)], { type: 'text/vcard;charset=utf-8' });
+    UI.download(card.name + '.vcf', blob);
+    UI.toast(MSG.saved);
+  }
+
+  function renderMain() {
+    var hint = document.getElementById('flip-hint');
+    var badge = Core.badgeState(card.verify);
+    var cardButton = UI.createCard(card, function (flipped) {
+      hint.textContent = flipped ? MSG.hintBack : MSG.hintFront;
+      store.logEvent('card_flip', { to: flipped ? 'back' : 'front' });
+    });
+    document.getElementById('card-slot').appendChild(cardButton);
+
+    var actions = document.getElementById('actions');
+    actions.appendChild(actionButton('save', 'contact', '전화 저장', saveContact));
+    actions.appendChild(actionButton('schedule', 'calendar', '일정 잡기', openSchedule));
+    actions.appendChild(actionButton('verify', 'shield', '인증내역', openVerify, badgeNode(badge)));
+
+    var links = document.getElementById('icon-links');
+    channelLinks().forEach(function (link) { links.appendChild(link); });
+  }
+
+  /* ---------- R-03 인증내역 팝업 ---------- */
+
+  function verifyRow(item) {
+    var lines = Core.verifyLines(item);
+    return el('li', { class: 'verify-row', dataset: { status: item.status } }, [
+      el('span', { class: 'verify-label', text: item.label }),
+      el('span', { class: 'verify-state' }, [el('span', { class: 'verify-main', text: lines.main })].concat(
+        lines.subs.map(function (text) { return el('small', { text: text }); })
+      ))
+    ]);
+  }
+
+  function openVerify() {
+    var popup = document.getElementById('verify-popup');
+    var badge = Core.badgeState(card.verify);
+    var latest = Core.latestCheck(card.verify);
+    var who = [card.name, [card.company, card.division].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+    store.logEvent('verify_open', { badge: badge });
+
+    popup.textContent = '';
+    [
+      el('div', { class: 'popup-head' }, [el('h2', { id: 'verify-title', text: '인증내역' }), badgeNode(badge)]),
+      el('p', { class: 'popup-who', text: who }),
+      el('ul', { class: 'verify-list' }, Core.visibleItems(card.verify).map(verifyRow)),
+      badge === 'none' ? el('p', { class: 'popup-note', text: '확인 중인 항목이 있습니다' }) : null,
+      el('p', { class: 'popup-foot' }, [
+        latest ? '최종 확인 ' + Core.formatDotDate(latest) : null,
+        latest ? el('br') : null,
+        MSG.demo
+      ]),
+      el('button', { type: 'button', class: 'btn-secondary', onclick: UI.closeLayer }, ['닫기'])
+    ].forEach(function (node) { if (node) popup.appendChild(node); });
+    UI.openLayer(popup);
+  }
+
+  /* ---------- R-04, R-05 일정 시트 ---------- */
+
+  function initialState() {
+    var today = Core.kstDate(Date.now());
+    return {
+      step: 1, today: today, year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)),
+      hours: card.hours, closed: [], loading: true, loadFailed: false, date: '', slot: '', notice: '',
+      name: '', phone: '', purpose: '', consent: false, consentOpen: false,
+      errors: {}, submitError: '', submitting: false
+    };
+  }
+
+  /** 상태를 바꾸고 시트를 다시 그린다. focusSelector 가 있으면 그 요소로 초점을 옮긴다. */
+  function setState(patch, focusSelector) {
+    state = Object.assign({}, state, patch);
+    renderSheet(focusSelector);
+  }
+
+  /** 글자를 입력하는 동안에는 다시 그리지 않는다 (입력 중인 칸의 초점을 지키기 위해). */
+  function setQuiet(patch) { state = Object.assign({}, state, patch); }
+
+  function monthIndex(dateStr) { return Number(dateStr.slice(0, 4)) * 12 + Number(dateStr.slice(5, 7)); }
+
+  function hasSelectableDate() {
+    var range = Core.bookingWindow(state.today);
+    for (var d = range.first; d <= range.last; d = Core.addDays(d, 1)) {
+      if (Core.isSelectable(d, state.today, state.hours, state.closed)) return true;
+    }
+    return false;
+  }
+
+  function sheetHead() {
+    return el('div', { class: 'sheet-head' }, [
+      el('h2', { id: 'schedule-title', text: '일정 잡기' }),
+      el('button', { type: 'button', class: 'icon-btn', 'aria-label': '닫기', onclick: requestClose }, [icon('close')])
+    ]);
+  }
+
+  function stepper() {
+    var step = function (n, label) {
+      var on = state.step === n;
+      return el('span', { class: on ? 'on' : null, 'aria-current': on ? 'step' : null, text: label });
+    };
+    return el('p', { class: 'stepper' }, [step(1, '1 날짜·시간'), el('span', { 'aria-hidden': 'true', text: '—' }), step(2, '2 신청자 정보')]);
+  }
+
+  function monthNav() {
+    var current = state.year * 12 + state.month;
+    var min = monthIndex(state.today);
+    var max = monthIndex(Core.bookingWindow(state.today).last);
+    var go = function (delta, focusSelector) {
+      var index = current + delta - 1;
+      setState({ year: Math.floor(index / 12), month: (index % 12) + 1 }, focusSelector);
+    };
+    return el('div', { class: 'month-nav' }, [
+      el('button', { type: 'button', id: 'cal-prev', class: 'icon-btn', 'aria-label': '이전 달', disabled: current <= min, onclick: function () { go(-1, '#cal-prev'); } }, [icon('left')]),
+      el('strong', { 'aria-live': 'polite', text: state.year + '년 ' + state.month + '월' }),
+      el('button', { type: 'button', id: 'cal-next', class: 'icon-btn', 'aria-label': '다음 달', disabled: current >= max, onclick: function () { go(1, '#cal-next'); } }, [icon('right')])
+    ]);
+  }
+
+  function pickDate(date) {
+    if (date === state.date) return;
+    store.logEvent('schedule_date_select', { date: date });
+    setState({ date: date, slot: '', notice: '' }, '.day[data-date="' + date + '"]');
+  }
+
+  function dayCell(date) {
+    if (!date) return el('span', { class: 'day-wrap' });
+    var dayNumber = String(Number(date.slice(8)));
+    var selectable = Core.isSelectable(date, state.today, state.hours, state.closed);
+    var dayState = date === state.date ? 'selected' : date === state.today ? 'today' : selectable ? 'default' : 'off';
+    if (!selectable) {
+      return el('span', { class: 'day-wrap' }, [
+        el('span', { class: 'day', dataset: { state: dayState }, 'aria-disabled': 'true', text: dayNumber })
+      ]);
+    }
+    var label = Number(date.slice(5, 7)) + '월 ' + dayNumber + '일 ' + Core.WEEKDAY_NAMES[Core.weekday(date)] + '요일';
+    return el('span', { class: 'day-wrap' }, [
+      el('button', {
+        type: 'button', class: 'day', dataset: { state: dayState, date: date }, 'aria-label': label,
+        'aria-pressed': String(date === state.date), onclick: function () { pickDate(date); }, text: dayNumber
+      })
+    ]);
+  }
+
+  function calendar() {
+    var head = el('div', { class: 'cal-row cal-head', 'aria-hidden': 'true' },
+      Core.WEEKDAY_NAMES.map(function (name) { return el('span', { text: name }); }));
+    var weeks = Core.monthGrid(state.year, state.month).map(function (week) {
+      return el('div', { class: 'cal-row' }, week.map(dayCell));
+    });
+    return el('div', { class: 'calendar', role: 'group', 'aria-label': state.year + '년 ' + state.month + '월 날짜 선택' }, [head].concat(weeks));
+  }
+
+  function pickSlot(key) {
+    store.logEvent('schedule_time_select', { time: key.slice(11) + ':00' });
+    setState({ slot: key, notice: '' }, '.slot[data-slot="' + key + '"]');
+  }
+
+  function slotButton(slot) {
+    var slotState = slot.closed ? 'closed' : slot.key === state.slot ? 'selected' : 'default';
+    return el('button', {
+      type: 'button', class: 'slot', dataset: { state: slotState, slot: slot.key }, disabled: slot.closed,
+      'aria-pressed': String(slot.key === state.slot),
+      'aria-label': slot.period + ' ' + slot.label + (slot.closed ? ' 마감' : ''),
+      onclick: function () { pickSlot(slot.key); }, text: slot.label
+    });
+  }
+
+  function timeArea() {
+    if (!state.date) {
+      return el('div', {}, [el('h3', { class: 'sub-label', text: '시간 선택' }), el('p', { class: 'empty-box', text: MSG.pickDate })]);
+    }
+    var slots = Core.slotsFor(state.date, state.hours, state.closed);
+    var group = function (period) {
+      var list = slots.filter(function (s) { return s.period === period; });
+      if (!list.length) return null;
+      return el('div', {}, [el('h3', { class: 'sub-label', text: period }), el('div', { class: 'slots' }, list.map(slotButton))]);
+    };
+    return el('div', {}, [group('오전'), group('오후')]);
+  }
+
+  /** 일정을 아직 못 읽었을 때의 내용. 마감 여부를 모르는 채로 날짜를 고르게 하지 않는다. */
+  function slotsPending() {
+    if (state.loading) return [stepper(), el('p', { class: 'loading-text', role: 'status', text: MSG.slotsLoading })];
+    return [
+      stepper(),
+      el('p', { class: 'inline-notice', role: 'alert', text: MSG.slotsFailed }),
+      el('p', { class: 'center' }, [
+        el('button', { type: 'button', id: 'slots-retry', class: 'link-btn', onclick: function () { setState({ loading: true, loadFailed: false }); loadSlots(); } }, ['다시 시도'])
+      ])
+    ];
+  }
+
+  function stepDate() {
+    if (state.loading || state.loadFailed) {
+      return { head: sheetHead(), body: slotsPending(), foot: [el('button', { type: 'button', class: 'btn-primary', disabled: true }, ['다음'])] };
+    }
+    var noDate = !hasSelectableDate();
+    var body = [
+      stepper(), monthNav(), calendar(),
+      state.notice ? el('p', { class: 'inline-notice', role: 'alert', text: state.notice }) : null,
+      noDate ? el('p', { class: 'empty-box', role: 'status' }, [MSG.noDate[0], el('br'), MSG.noDate[1]]) : timeArea(),
+      state.slot ? el('p', { class: 'summary', text: Core.formatSlot(state.slot) }) : null
+    ];
+    var next = el('button', {
+      type: 'button', class: 'btn-primary', disabled: !state.slot,
+      onclick: function () { setState({ step: 2, notice: '' }, '#f-name'); }
+    }, ['다음']);
+    return { head: sheetHead(), body: body, foot: [next] };
+  }
+
+  function canSubmit() {
+    return state.name.trim() !== '' && Core.digits(state.phone) !== '' && state.consent;
+  }
+
+  function syncSubmitButton() {
+    var button = document.getElementById('submit-btn');
+    if (button) button.disabled = !canSubmit() || state.submitting;
+  }
+
+  function field(id, label, attrs, error, onInput) {
+    var input = el('input', Object.assign({
+      id: id, class: 'input', 'aria-invalid': error ? 'true' : null, 'aria-describedby': error ? id + '-err' : null
+    }, attrs));
+    input.addEventListener('input', function () {
+      onInput(input);
+      syncSubmitButton();
+    });
+    return el('div', { class: 'field' + (error ? ' has-error' : '') }, [
+      el('label', { for: id, text: label }), input,
+      error ? el('p', { class: 'error', id: id + '-err', text: error }) : null
+    ]);
+  }
+
+  function consentBlock() {
+    var error = state.errors.consent;
+    var box = el('input', {
+      type: 'checkbox', id: 'f-consent', class: 'check-input',
+      'aria-invalid': error ? 'true' : null, 'aria-describedby': error ? 'f-consent-err' : null
+    });
+    box.checked = state.consent;
+    box.addEventListener('change', function () {
+      setQuiet({ consent: box.checked });
+      syncSubmitButton();
+    });
+    var toggle = el('button', {
+      type: 'button', id: 'consent-toggle', class: 'link-btn sub', 'aria-expanded': String(state.consentOpen),
+      onclick: function () { setState({ consentOpen: !state.consentOpen }, '#consent-toggle'); }
+    }, ['내용 보기']);
+    return el('div', { class: 'consent' + (error ? ' has-error' : '') }, [
+      el('div', { class: 'consent-row' }, [
+        el('label', { class: 'check', for: 'f-consent' }, [
+          box, el('span', { class: 'check-box', 'aria-hidden': 'true' }, [icon('check', 16, 2.6)]),
+          el('span', { text: '개인정보 수집·이용 동의 (필수)' })
+        ]),
+        toggle
+      ]),
+      error ? el('p', { class: 'error', id: 'f-consent-err', text: error }) : null,
+      state.consentOpen ? el('ul', { class: 'consent-detail' }, CONSENT_LINES.map(function (t) { return el('li', { text: t }); })) : null
+    ]);
+  }
+
+  function stepForm() {
+    var errors = state.errors;
+    var body = [
+      stepper(),
+      el('p', { class: 'summary' }, [
+        el('span', { text: Core.formatSlot(state.slot) }),
+        el('button', {
+          type: 'button', class: 'link-btn',
+          onclick: function () { setState({ step: 1, errors: {}, submitError: '' }, '.slot[data-state="selected"]'); }
+        }, ['변경'])
+      ]),
+      field('f-name', '이름 (필수)', { type: 'text', value: state.name, maxlength: '20', autocomplete: 'name', placeholder: '예: 홍길동' },
+        errors.name, function (input) { setQuiet({ name: input.value }); }),
+      field('f-phone', '연락처 (필수)', { type: 'tel', inputmode: 'numeric', value: state.phone, maxlength: '13', autocomplete: 'tel', placeholder: '예: 010-0000-0000' },
+        errors.phone, function (input) {
+          var formatted = Core.formatPhone(input.value);
+          if (formatted !== input.value) input.value = formatted;
+          setQuiet({ phone: formatted });
+        }),
+      field('f-purpose', '용건 (선택)', { type: 'text', value: state.purpose, maxlength: '100', placeholder: '예: 상담 문의' },
+        '', function (input) { setQuiet({ purpose: input.value }); }),
+      consentBlock(),
+      state.submitError ? el('p', { class: 'inline-notice', role: 'alert', text: state.submitError }) : null
+    ];
+    var submit = el('button', {
+      type: 'submit', class: 'btn-primary', id: 'submit-btn', disabled: !canSubmit() || state.submitting
+    }, [state.submitting ? '신청 중…' : '신청하기']);
+    return { head: sheetHead(), body: body, foot: [submit], onSubmit: submitBooking };
+  }
+
+  function submitBooking(event) {
+    event.preventDefault();
+    if (state.submitting) return; // 여러 번 눌러도 한 번만 저장한다
+    var errors = Core.validateBooking({ name: state.name, phone: state.phone, consent: state.consent });
+    if (Object.keys(errors).length) {
+      setState({ errors: errors, submitError: '' }, errors.name ? '#f-name' : errors.phone ? '#f-phone' : '#f-consent');
+      return;
+    }
+    var slot = state.slot;
+    var session = openCount;
+    setState({ errors: {}, submitError: '', submitting: true });
+    store.book({ slot: slot, name: state.name.trim(), phone: Core.digits(state.phone), purpose: state.purpose.trim() })
+      .then(function (result) {
+        slotsRequest = null; // 신청을 시도했으면 마감 상황이 달라졌을 수 있다
+        // 저장됐으면 화면 상태와 상관없이 기록한다
+        if (result.success) store.logEvent('schedule_submit', { slot: slot });
+        if (session !== openCount || sheet.hidden) return;
+        if (result.success) {
+          setState({ step: 3, submitting: false }, '#done-close');
+        } else if (result.error === 'closed') {
+          setState({ step: 1, submitting: false, slot: '', closed: state.closed.concat([slot]), notice: MSG.closed }, '#cal-next');
+        } else {
+          setState({ submitting: false, submitError: result.error === 'rate' ? MSG.busy : MSG.failed }, '#submit-btn');
+        }
+      });
+  }
+
+  function stepDone() {
+    var row = function (key, value) { return el('div', {}, [el('dt', { text: key }), el('dd', { text: value })]); };
+    var body = [
+      el('div', { class: 'done-mark', 'aria-hidden': 'true' }, [icon('check', 36, 2.2)]),
+      el('h2', { id: 'schedule-title', class: 'done-title', text: '신청이 접수되었습니다' }),
+      el('dl', { class: 'kv' }, [
+        row('일시', Core.formatSlot(state.slot)),
+        row('담당', card.name + ' (' + card.company + ')'),
+        row('신청자', state.name.trim() + ' · ' + Core.maskPhone(state.phone))
+      ]),
+      el('p', { class: 'done-guide' }, ['담당자가 확인 후 연락드립니다.', el('br'), '일정은 담당자 확정 후 정해집니다.'])
+    ];
+    var close = el('button', { type: 'button', class: 'btn-secondary', id: 'done-close', onclick: UI.closeLayer }, ['닫기']);
+    return { head: null, body: body, foot: [close] };
+  }
+
+  /** 다시 그리기 전에 초점이 있던 자리를 선택자로 적어 둔다. 시트 밖이면 빈 문자열 */
+  function focusedSelector() {
+    var active = document.activeElement;
+    if (!active || !sheet.contains(active)) return '';
+    if (active.id) return '#' + active.id;
+    if (active.dataset.date) return '.day[data-date="' + active.dataset.date + '"]';
+    if (active.dataset.slot) return '.slot[data-slot="' + active.dataset.slot + '"]';
+    return '#' + sheet.id;
+  }
+
+  function renderSheet(focusSelector) {
+    focusSelector = focusSelector || focusedSelector();
+    var view = state.step === 1 ? stepDate() : state.step === 2 ? stepForm() : stepDone();
+    var main = el(view.onSubmit ? 'form' : 'div', { class: 'sheet-main', novalidate: view.onSubmit ? true : null, onsubmit: view.onSubmit || null }, [
+      el('div', { class: 'sheet-body' }, view.body),
+      el('div', { class: 'sheet-foot' }, view.foot)
+    ]);
+    sheet.textContent = '';
+    sheet.appendChild(el('div', { class: 'grip', 'aria-hidden': 'true' }));
+    if (view.head) sheet.appendChild(view.head);
+    sheet.appendChild(main);
+
+    if (!focusSelector) return;
+    var target = sheet.querySelector(focusSelector);
+    if (target && !target.disabled) target.focus();
+    else sheet.focus();
+  }
+
+  function requestClose() {
+    if (state.submitting) return; // 저장 결과를 보여줄 때까지 닫지 않는다 (응답이 없으면 15초 뒤 실패로 풀린다)
+    var hasInput = state.step === 2 && (state.name || state.phone || state.purpose);
+    if (hasInput && !root.confirm(MSG.confirmClose)) return;
+    UI.closeLayer();
+  }
+
+  /** 저장소가 돌려준 일정 자료가 약속한 모양인지 확인한다. 화면과 선택자를 만드는 데 쓰이므로 엄격히 본다. */
+  function isSlotsData(data) {
+    var isIntList = function (list, min, max) {
+      return Array.isArray(list) && list.length > 0 && list.every(function (n) {
+        return typeof n === 'number' && n % 1 === 0 && n >= min && n <= max;
+      });
+    };
+    return Boolean(data) && /^\d{4}-\d{2}-\d{2}$/.test(data.today) && Array.isArray(data.closed) &&
+      Boolean(data.hours) && isIntList(data.hours.days, 0, 6) && isIntList(data.hours.hours, 0, 23);
+  }
+
+  /**
+   * 일정 자료를 요청한다. 방금 받은 것이 있으면 잠깐 다시 쓴다.
+   * 화면을 열 때 미리 한 번 불러 두므로 [일정 잡기]를 누르면 대개 바로 달력이 뜬다.
+   */
+  function requestSlots() {
+    var now = Date.now();
+    if (!slotsRequest || now - slotsRequest.at > SLOTS_FRESH_MS) slotsRequest = { at: now, promise: store.getSlots() };
+    return slotsRequest.promise;
+  }
+
+  function loadSlots() {
+    var session = openCount;
+    requestSlots().then(function (result) {
+      if (!result.success || !isSlotsData(result.data)) slotsRequest = null; // 실패한 응답은 다시 쓰지 않는다
+      if (session !== openCount || sheet.hidden) return;
+      if (!result.success || !isSlotsData(result.data)) { setState({ loading: false, loadFailed: true }, '#slots-retry'); return; }
+      var data = result.data;
+      setState({
+        loading: false, loadFailed: false, hours: data.hours, today: data.today,
+        closed: data.closed.filter(function (key) { return /^\d{4}-\d{2}-\d{2}T\d{2}$/.test(String(key)); }),
+        year: Number(data.today.slice(0, 4)), month: Number(data.today.slice(5, 7))
+      });
+    });
+  }
+
+  function openSchedule() {
+    store.logEvent('schedule_open');
+    openCount += 1;
+    state = initialState();
+    renderSheet();
+    UI.openLayer(sheet, { onRequestClose: requestClose });
+    loadSlots();
+  }
+
+  /* ---------- 시작 ---------- */
+
+  function init() {
+    sheet = document.getElementById('schedule-sheet');
+    renderMain();
+    store.logEvent('card_view');
+    // 일정을 미리 불러 둔다. 달력이 빨리 뜨고, 저장소가 다시 보내기를 지원하는지도 일찍 알게 된다.
+    requestSlots();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})(window);
+</script>
 </body>
 </html>
